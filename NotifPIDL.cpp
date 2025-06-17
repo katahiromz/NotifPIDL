@@ -106,7 +106,7 @@ void dump_pidl(const char *name, LPCITEMIDLIST pidl)
         szPath[0] = 0;
 
     printf("%s:\n", name);
-    printf("  size: %u (0x%X)\n", size, size);
+    printf("  size: %u (0x%X) bytes\n", size, size);
     if (szPath[0])
         printf("  path: %s\n", szPath);
 
@@ -138,8 +138,13 @@ void OnChangeNotify(HWND hwnd, WPARAM wParam, LPARAM lParam)
 
     if (ppidl[0])
         dump_pidl("ppidl[0]", ppidl[0]);
+    else
+        printf("ppidl[0] is NULL\n");
+
     if (ppidl[1])
         dump_pidl("ppidl[1]", ppidl[1]);
+    else
+        printf("ppidl[1] is NULL\n");
 
     SHChangeNotification_Unlock(hLock);
 }
