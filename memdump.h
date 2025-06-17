@@ -1,127 +1,153 @@
-// memdump.h --- C++11 memory dumper
+// memdump.h --- C++ memory dumper
 
 #pragma once
 
-#include <cstdint>
-#include <cstdio>
-#include <cctype>
-#include <cassert>
+#include <ctype.h>
+#include <assert.h>
 
-struct memdump_settings
+#define MEMDUMP_BYTE_TO_HEX(buf, byte, hex) do { \
+    assert((sizeof(buf) / sizeof(buf[0])) >= 3); \
+    (buf)[0] = (hex)[(byte) >> 4]; \
+    (buf)[1] = (hex)[(byte) & 0xF]; \
+    (buf)[2] = 0; \
+} while (0)
+
+#define MEMDUMP_DWORD_TO_HEX(buf, dword, hex) do { \
+    assert((sizeof(buf) / sizeof(buf[0])) >= 9); \
+    (buf)[0] = (hex)[((dword) >> 28) & 0xF]; \
+    (buf)[1] = (hex)[((dword) >> 24) & 0xF]; \
+    (buf)[2] = (hex)[((dword) >> 20) & 0xF]; \
+    (buf)[3] = (hex)[((dword) >> 16) & 0xF]; \
+    (buf)[4] = (hex)[((dword) >> 12) & 0xF]; \
+    (buf)[5] = (hex)[((dword) >> 8) & 0xF]; \
+    (buf)[6] = (hex)[((dword) >> 4) & 0xF]; \
+    (buf)[7] = (hex)[((dword) >> 0) & 0xF]; \
+    (buf)[8] = 0; \
+} while (0)
+
+template <typename T_STRING>
+inline void memdump_add_char(T_STRING& str, char ch)
 {
-    int column = 16;
-    bool has_addr = true;
-    bool has_header = true;
+    str += ch;
+}
+
+template <typename T_STRING>
+inline void memdump_add_string(T_STRING& str, const char *ptr)
+{
+    while (*ptr)
+    {
+        memdump_add_char(str, *ptr);
+        ++ptr;
+    }
+}
+
+struct memdump_settings_t
+{
+    size_t addr_base;
+    size_t column;
+    bool has_addr;
+    bool has_header;
+    const char *hex;
+
+    memdump_settings_t()
+    {
+        addr_base = 0;
+        column = 16;
+        has_addr = true;
+        has_header = true;
+        hex = "0123456789ABCDEF";
+    }
 };
 
-template <typename T_STR>
-void memdump(T_STR& str, const void *ptr, size_t size, const memdump_settings& settings = {})
+template <typename T_STRING>
+void memdump(T_STRING& str, const void *ptr, size_t size, const memdump_settings_t& settings)
 {
-    // settings
-    int column = settings.column;
+    size_t addr_base = settings.addr_base, column = settings.column;
     bool has_addr = settings.has_addr, has_header = settings.has_header;
-
-    size_t i, j, next_count;
-    const uint8_t *pb = reinterpret_cast<const uint8_t *>(ptr);
+    const char *hex = settings.hex;
+    const unsigned char *pb = reinterpret_cast<const unsigned char *>(ptr);
 
     assert(1 < column);
     assert(column <= 0x100);
 
-    // helper function
-    static const char *HEX = "0123456789ABCDEF";
-    auto byte_to_hex = [&](char buf[3], uint8_t byte)
-    {
-        buf[0] = HEX[byte >> 4];
-        buf[1] = HEX[byte & 0xF];
-        buf[2] = 0;
-    };
+    size_t i, j, count;
 
     // header
     if (has_header)
     {
         // addr
         if (has_addr)
-            str += "+ADDRESS  ";
+            memdump_add_string(str, "+ADDRESS  ");
 
-        // column offset
+        // column offsets
         for (i = 0; i < column; ++i)
         {
             if (i < 16)
             {
-                str += '+';
-                str += HEX[i & 0xF];
+                memdump_add_char(str, '+');
+                memdump_add_char(str, hex[i & 0xF]);
             }
             else
             {
-                str += HEX[i >> 4];
-                str += HEX[i & 0xF];
+                memdump_add_char(str, hex[i >> 4]);
+                memdump_add_char(str, hex[i & 0xF]);
             }
-            str += ' ';
+            memdump_add_char(str, ' ');
         }
-        str += ' ';
+        memdump_add_char(str, ' ');
 
-        // text offset
+        // text offsets
         for (i = 0; i < column; ++i)
         {
-            str += HEX[i & 0xF];
+            memdump_add_char(str, hex[i & 0xF]);
         }
 
         // new line
-        str += '\n';
+        memdump_add_char(str, '\n');
     }
 
     // body
+    char buf[9];
     for (i = 0; i < size; i += column)
     {
         // addr
         if (has_addr)
         {
-            char buf1[16];
-            std::sprintf(buf1, "%08lX  ", i);
-            str += buf1;
+            MEMDUMP_DWORD_TO_HEX(buf, addr_base + i, hex);
+            memdump_add_string(str, buf);
+            memdump_add_string(str, "  ");
         }
 
-        next_count = (i + column < size) ? column : (size - i);
+        count = (i + column < size) ? column : (size - i);
 
         // hex
-        for (j = 0; j < next_count; j++)
+        for (j = 0; j < count; j++)
         {
-            char buf2[8];
-            byte_to_hex(buf2, pb[i + j]);
-            buf2[2] = ' ';
-            buf2[3] = 0;
-            str += buf2;
+            MEMDUMP_BYTE_TO_HEX(buf, pb[i + j], hex);
+            memdump_add_string(str, buf);
+            memdump_add_char(str, ' ');
         }
-        str += T_STR(3 * (column - next_count) + 1, ' ');
+
+        for (j = 0; j < 3 * (column - count) + 1; ++j)
+            memdump_add_char(str, ' ');
 
         // text
-        for (j = 0; j < next_count; j++)
+        for (j = 0; j < count; j++)
         {
-            if (isprint(pb[i + j]))
-                str += pb[i + j];
-            else
-                str += '.';
+            memdump_add_char(str, isprint(pb[i + j]) ? pb[i + j] : '.');
         }
 
         // new line
-        str += "\n";
+        memdump_add_char(str, '\n');
     }
 }
 
-template <typename T_STR>
-void filedump(T_STR& str, FILE *fp, const memdump_settings& settings = {})
+template <typename T_STRING>
+inline void memdump(T_STRING& str, const void *ptr, size_t size)
 {
-    T_STR image;
-
-    char buf[1024];
-    for (;;)
-    {
-        size_t count = fread(buf, 1, sizeof(buf), fp);
-        if (!count)
-            break;
-
-        image.append(buf, count);
-    }
-
-    memdump(str, image.data(), image.size(), settings);
+    memdump_settings_t settings;
+    memdump(str, ptr, size, settings);
 }
+
+#undef MEMDUMP_BYTE_TO_HEX
+#undef MEMDUMP_DWORD_TO_HEX
