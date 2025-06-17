@@ -167,12 +167,12 @@ WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-INT WINAPI
-WinMain(HINSTANCE   hInstance,
-        HINSTANCE   hPrevInstance,
-        LPSTR       lpCmdLine,
-        INT         nCmdShow)
+int main(void)
 {
+    HINSTANCE hInstance = GetModuleHandle(NULL);
+    LPTSTR lpCmdLine = GetCommandLine();
+    INT nCmdShow = SW_SHOWNORMAL;
+
     g_hInst = hInstance;
     InitCommonControls();
 
@@ -212,11 +212,4 @@ WinMain(HINSTANCE   hInstance,
     }
 
     return (INT)msg.wParam;
-}
-
-int main(void)
-{
-    STARTUPINFO info = { sizeof(info) };
-    GetStartupInfo(&info);
-    return WinMain(GetModuleHandle(NULL), NULL, GetCommandLine(), info.wShowWindow);
 }
