@@ -193,7 +193,7 @@ WinMain(HINSTANCE   hInstance,
 
     DWORD style = WS_OVERLAPPEDWINDOW;
     HWND hwnd = CreateWindow(CLASSNAME, CLASSNAME, style,
-                             CW_USEDEFAULT, CW_USEDEFAULT, 400, 300,
+                             CW_USEDEFAULT, CW_USEDEFAULT, 400, 80,
                              NULL, NULL, hInstance, NULL);
     if (!hwnd)
     {
