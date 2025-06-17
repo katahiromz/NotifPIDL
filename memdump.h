@@ -25,29 +25,27 @@ template <typename T_STRING>
 inline void add_string(T_STRING& str, const char *ptr)
 {
     while (*ptr)
-    {
         add_char(str, *ptr++);
-    }
 }
 
 template <typename T_STRING>
 inline void add_byte(T_STRING& str, unsigned char byte, const char *hex)
 {
-    add_char(str, (hex)[(byte) >> 4]);
-    add_char(str, (hex)[(byte) & 0xF]);
+    add_char(str, hex[(byte) >> 4]);
+    add_char(str, hex[(byte) & 0xF]);
 }
 
 template <typename T_STRING>
 inline void add_dword(T_STRING& str, unsigned dword, const char *hex)
 {
-    add_char(str, (hex)[(dword >> 28) & 0xF]);
-    add_char(str, (hex)[(dword >> 24) & 0xF]);
-    add_char(str, (hex)[(dword >> 20) & 0xF]);
-    add_char(str, (hex)[(dword >> 16) & 0xF]);
-    add_char(str, (hex)[(dword >> 12) & 0xF]);
-    add_char(str, (hex)[(dword >> 8) & 0xF]);
-    add_char(str, (hex)[(dword >> 4) & 0xF]);
-    add_char(str, (hex)[(dword >> 0) & 0xF]);
+    add_char(str, hex[(dword >> 28) & 0xF]);
+    add_char(str, hex[(dword >> 24) & 0xF]);
+    add_char(str, hex[(dword >> 20) & 0xF]);
+    add_char(str, hex[(dword >> 16) & 0xF]);
+    add_char(str, hex[(dword >> 12) & 0xF]);
+    add_char(str, hex[(dword >> 8) & 0xF]);
+    add_char(str, hex[(dword >> 4) & 0xF]);
+    add_char(str, hex[(dword >> 0) & 0xF]);
 }
 
 struct settings_t
