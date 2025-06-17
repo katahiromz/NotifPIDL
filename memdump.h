@@ -36,16 +36,29 @@ inline void add_byte(T_STRING& str, unsigned char byte, const char *hex)
 }
 
 template <typename T_STRING>
-inline void add_dword(T_STRING& str, unsigned dword, const char *hex)
+inline void add_addr(T_STRING& str, size_t value, const char *hex, bool enable_64bit = true)
 {
-    add_char(str, hex[(dword >> 28) & 0xF]);
-    add_char(str, hex[(dword >> 24) & 0xF]);
-    add_char(str, hex[(dword >> 20) & 0xF]);
-    add_char(str, hex[(dword >> 16) & 0xF]);
-    add_char(str, hex[(dword >> 12) & 0xF]);
-    add_char(str, hex[(dword >> 8) & 0xF]);
-    add_char(str, hex[(dword >> 4) & 0xF]);
-    add_char(str, hex[(dword >> 0) & 0xF]);
+#if defined(_WIN64) || defined(_M_X64) || defined(M_AMD64) || defined(_M_ARM64) // 64-bit?
+    if (enable_64bit)
+    {
+        add_char(str, hex[(value >> 60) & 0xF]);
+        add_char(str, hex[(value >> 56) & 0xF]);
+        add_char(str, hex[(value >> 52) & 0xF]);
+        add_char(str, hex[(value >> 48) & 0xF]);
+        add_char(str, hex[(value >> 44) & 0xF]);
+        add_char(str, hex[(value >> 40) & 0xF]);
+        add_char(str, hex[(value >> 36) & 0xF]);
+        add_char(str, hex[(value >> 32) & 0xF]);
+    }
+#endif
+    add_char(str, hex[(value >> 28) & 0xF]);
+    add_char(str, hex[(value >> 24) & 0xF]);
+    add_char(str, hex[(value >> 20) & 0xF]);
+    add_char(str, hex[(value >> 16) & 0xF]);
+    add_char(str, hex[(value >> 12) & 0xF]);
+    add_char(str, hex[(value >> 8) & 0xF]);
+    add_char(str, hex[(value >> 4) & 0xF]);
+    add_char(str, hex[(value >> 0) & 0xF]);
 }
 
 struct settings_t
@@ -54,6 +67,7 @@ struct settings_t
     size_t column;
     bool has_addr;
     bool has_header;
+    bool enable_64bit;
     const char *hex;
 
     settings_t()
@@ -62,6 +76,7 @@ struct settings_t
         column = 16;
         has_addr = true;
         has_header = true;
+        enable_64bit = true;
         hex = "0123456789ABCDEF";
     }
 };
@@ -71,6 +86,7 @@ void memdump(T_STRING& str, const void *ptr, size_t size, const settings_t& sett
 {
     size_t addr_base = settings.addr_base, column = settings.column;
     bool has_addr = settings.has_addr, has_header = settings.has_header;
+    bool enable_64bit = settings.enable_64bit;
     const char *hex = settings.hex;
     const unsigned char *pb = reinterpret_cast<const unsigned char *>(ptr);
 
@@ -84,7 +100,13 @@ void memdump(T_STRING& str, const void *ptr, size_t size, const settings_t& sett
     {
         // addr
         if (has_addr)
+        {
             add_string(str, "+ADDRESS  ");
+#if defined(_WIN64) || defined(_M_X64) || defined(M_AMD64) || defined(_M_ARM64) // 64-bit?
+            if (enable_64bit)
+                add_string(str, "******  ");
+#endif
+        }
 
         // column offsets
         for (i = 0; i < column; ++i)
@@ -117,7 +139,7 @@ void memdump(T_STRING& str, const void *ptr, size_t size, const settings_t& sett
         // addr
         if (has_addr)
         {
-            add_dword(str, addr_base + i, hex);
+            add_addr(str, addr_base + i, hex, enable_64bit);
             add_string(str, "  ");
         }
 
